@@ -72,6 +72,7 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("username", username)
+
 		c.Next()
 	}
 }
