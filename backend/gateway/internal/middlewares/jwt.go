@@ -2,33 +2,12 @@ package middlewares
 
 import (
 	"net/http"
-	"os"
 	"strings"
-	"time"
 
+	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var secretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
-
-// GenerateJWT creates a JWT token with an expiration time
-func GenerateJWT(username string) (string, error) {
-	expirationTime := time.Now().Add(1 * time.Hour).Unix()
-
-	claims := jwt.MapClaims{
-		"sub": username, // ✅ Use "sub" instead of "username"
-		"exp": expirationTime,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString(secretKey)
-	if err != nil {
-		return "", err
-	}
-
-	return signedToken, nil
-}
 
 // JWTMiddleware extracts & validates JWT token
 func JWTMiddleware() gin.HandlerFunc {
@@ -46,11 +25,15 @@ func JWTMiddleware() gin.HandlerFunc {
 		}
 		tokenString := parts[1]
 
+		cfg := config.LoadConfig()
+
+		// Validate token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Ensure the signing method is HMAC
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid
 			}
-			return secretKey, nil
+			return []byte(cfg.SECRET_KEY), nil
 		})
 
 		if err != nil || !token.Valid {
@@ -64,14 +47,15 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Safe extraction of "sub"
-		username, ok := claims["sub"].(string)
+		// Extract email from claims
+		email, ok := claims["email"].(string)
 		if !ok {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			return
 		}
 
-		c.Set("username", username)
+		// Store email in context for use in handlers
+		c.Set("email", email)
 
 		c.Next()
 	}

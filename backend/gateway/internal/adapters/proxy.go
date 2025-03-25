@@ -1,28 +1,18 @@
 package adapters
 
 import (
-	"net/http/httputil"
-	"net/url"
-
+	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/pkg"
 	"github.com/gin-gonic/gin"
 )
 
 // RegisterProxyRoutes sets up reverse proxy routes for a given service
-func RegisterProxyRoutes(router *gin.RouterGroup, serviceBaseURL string) {
-	targetURL, err := url.Parse(serviceBaseURL)
-	if err != nil {
-		panic("Invalid service base URL: " + serviceBaseURL)
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(targetURL)
-
+func RegisterProxyRoutes(router *gin.RouterGroup, target string) {
 	router.Any("/*proxyPath", func(c *gin.Context) {
-		// Modify request before forwarding
-		c.Request.URL.Host = targetURL.Host
-		c.Request.URL.Scheme = targetURL.Scheme
-		c.Request.URL.Path = c.Param("proxyPath")
+		proxyPath := c.Param("proxyPath")
+		if proxyPath == "" {
+			proxyPath = "/"
+		}
 
-		// Forward request to the target service
-		proxy.ServeHTTP(c.Writer, c.Request)
+		pkg.NewReverseProxy(target)(c)
 	})
 }

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,17 +13,9 @@ import (
 	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/config"
 	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/internal/adapters"
 	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/internal/middlewares"
+	"github.com/AntonyIS-chain/lost-found-app/backend/gateway/pkg"
 	"github.com/gin-gonic/gin"
 )
-
-// NewReverseProxy creates a reverse proxy to forward requests
-func NewReverseProxy(target string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		targetURL, _ := url.Parse(target)
-		proxy := httputil.NewSingleHostReverseProxy(targetURL)
-		proxy.ServeHTTP(c.Writer, c.Request)
-	}
-}
 
 // GatewayServer initializes and starts the API Gateway
 func GatewayServer() {
@@ -38,50 +28,51 @@ func GatewayServer() {
 	// Apply global middleware
 	router.Use(middlewares.CORSMiddleware())
 	// router.Use(middlewares.LoggingMiddleware())
-	router.Use(middlewares.RateLimiterMiddleware())
+	// router.Use(middlewares.RateLimiterMiddleware())
 
 	// Public Routes (No Authentication)
-	router.POST("/auth/login", NewReverseProxy(cfg.UserService))
-	router.POST("/auth/signup", NewReverseProxy(cfg.UserService))
-	router.POST("/auth/refresh-token", NewReverseProxy(cfg.UserService))
+	router.POST("/api/v1/auth/login", pkg.NewReverseProxy(cfg.USER_SERVICE))
+	router.POST("/api/v1/auth/register", pkg.NewReverseProxy(cfg.USER_SERVICE))
+	router.POST("/api/v1/auth/refresh-token", pkg.NewReverseProxy(cfg.USER_SERVICE))
+	router.POST("/api/v1/auth/reset-password", pkg.NewReverseProxy(cfg.USER_SERVICE))
 
 	// Protected Routes (Require valid JWT)
-	protectedRoutes := router.Group("/gw")
+	protectedRoutes := router.Group("/")
 	protectedRoutes.Use(middlewares.JWTMiddleware())
 
 	// User Service Routes
-	userRoutes := protectedRoutes.Group("/user")
-	adapters.RegisterProxyRoutes(userRoutes, cfg.UserService)
+	userRoutes := protectedRoutes.Group("/api/v1/users")
+	adapters.RegisterProxyRoutes(userRoutes, cfg.USER_SERVICE)
 
 	// Reward Service Routes
 	rewardRoutes := protectedRoutes.Group("/reward")
-	adapters.RegisterProxyRoutes(rewardRoutes, cfg.RewardService)
+	adapters.RegisterProxyRoutes(rewardRoutes, cfg.REWARD_SERVICE)
 
 	// Payment Service Routes
 	paymentRoutes := protectedRoutes.Group("/payment")
-	adapters.RegisterProxyRoutes(paymentRoutes, cfg.PaymentService)
+	adapters.RegisterProxyRoutes(paymentRoutes, cfg.PAYMENT_SERVICE)
 
 	// Notification Service Routes
 	notificationRoutes := protectedRoutes.Group("/notification")
-	adapters.RegisterProxyRoutes(notificationRoutes, cfg.NotificationService)
+	adapters.RegisterProxyRoutes(notificationRoutes, cfg.NOTIFICATION_SERVICE)
 
 	// Matching Service Routes
 	matchingRoutes := protectedRoutes.Group("/matching")
-	adapters.RegisterProxyRoutes(matchingRoutes, cfg.MatchingService)
+	adapters.RegisterProxyRoutes(matchingRoutes, cfg.MATCHING_SERVICE)
 
 	// Document Service Routes
 	documentRoutes := protectedRoutes.Group("/document")
-	adapters.RegisterProxyRoutes(documentRoutes, cfg.DocumentService)
+	adapters.RegisterProxyRoutes(documentRoutes, cfg.DOCUMENT_SERVICE)
 
 	// Start the HTTP Server
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", cfg.GatewayPort),
+		Addr:    fmt.Sprintf(":%s", cfg.GATEWAY_PORT),
 		Handler: router,
 	}
 
 	// Graceful Shutdown
 	go func() {
-		log.Printf("[INFO] API Gateway running on port %s\n", cfg.GatewayPort)
+		log.Printf("[INFO] API Gateway running on port %s\n", cfg.GATEWAY_PORT)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("[FATAL] Server error: %v\n", err)
 		}

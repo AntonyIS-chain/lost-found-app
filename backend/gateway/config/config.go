@@ -9,15 +9,15 @@ import (
 
 // Config holds the application configuration
 type Config struct {
-	GatewayPort       string
-	UserService       string
-	RewardService     string
-	PaymentService    string
-	NotificationService string
-	MatchingService   string
-	DocumentService   string
-	AuthSecret        string
-	EnableLogging     bool
+	GATEWAY_PORT         string
+	USER_SERVICE         string
+	REWARD_SERVICE       string
+	PAYMENT_SERVICE      string
+	NOTIFICATION_SERVICE string
+	MATCHING_SERVICE     string
+	DOCUMENT_SERVICE     string
+	SECRET_KEY           string
+	ENABLE_LOGGING       bool
 }
 
 // LoadConfig loads configuration based on the environment
@@ -39,14 +39,14 @@ func LoadConfig() *Config {
 
 	// Read values from environment variables
 	return &Config{
-		GatewayPort:       os.Getenv("GATEWAY_PORT"),
-		UserService:       os.Getenv("USER_SERVICE"),
-		RewardService:     os.Getenv("REWARD_SERVICE"),
-		PaymentService:    os.Getenv("PAYMENT_SERVICE"),
-		NotificationService: os.Getenv("NOTIFICATION_SERVICE"),
-		MatchingService:   os.Getenv("MATCHING_SERVICE"),
-		DocumentService:   os.Getenv("DOCUMENT_SERVICE"),
-		AuthSecret:        os.Getenv("AUTH_SECRET"),
-		EnableLogging:     os.Getenv("ENABLE_LOGGING") == "true",
+		GATEWAY_PORT:         os.Getenv("GATEWAY_PORT"),
+		USER_SERVICE:         os.Getenv("USER_SERVICE"),
+		REWARD_SERVICE:       os.Getenv("REWARD_SERVICE"),
+		PAYMENT_SERVICE:      os.Getenv("PAYMENT_SERVICE"),
+		NOTIFICATION_SERVICE: os.Getenv("NOTIFICATION_SERVICE"),
+		MATCHING_SERVICE:     os.Getenv("MATCHING_SERVICE"),
+		DOCUMENT_SERVICE:     os.Getenv("DOCUMENT_SERVICE"),
+		SECRET_KEY:           os.Getenv("SECRET_KEY"),
+		ENABLE_LOGGING:       os.Getenv("ENABLE_LOGGING") == "true",
 	}
 }
